@@ -1,0 +1,27 @@
+name: macebattles
+version: '1.0-0'
+main: net.pixelateddream.macebattles.Macebattles
+api-version: '1.21'
+authors: [ deltathedumb, PixelatedDream ]
+description: Made for the MaceBattles minecraft server. Adds a casual and competitive mace battles gamemode.
+commands:
+  duels:
+    description: Main duels command
+    usage: |
+      /<command> invite <player> - Challenge a player
+      /<command> accept - Accept a duel
+      /<command> deny - Decline a duel
+      /<command> queue <casual|ranked> - Join matchmaking
+    aliases: [duel, d]
+  entitycmd:
+    description: Link entities to commands (Ops only)
+    usage: |
+      /<command> link <console|player> <command> - Link entity to command
+      /<command> unlink - Unlink entity from command
+      /<command> list - List all entity command links
+    aliases: [ecmd, entitycommand]
+  mb:
+    description: Show the current build number
+    usage: /<command> build
+    permission: op
+buildNumber: ${buildNumber}

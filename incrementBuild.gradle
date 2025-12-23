@@ -1,0 +1,22 @@
+import java.util.Properties
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+
+task incrementBuildNumber {
+    doLast {
+        def propsFile = file("build.properties")
+        if (!propsFile.exists()) {
+            propsFile.text = "build.number=1\n"
+        }
+        Properties props = new Properties()
+        props.load(new FileInputStream(propsFile))
+        int buildNum = (props.getProperty("build.number") ?: "1").toInteger()
+        buildNum++
+        props.setProperty("build.number", buildNum.toString())
+        props.store(new FileOutputStream(propsFile), null)
+        println "Build number incremented to: $buildNum"
+    }
+}
+
+tasks.build.dependsOn incrementBuildNumber
