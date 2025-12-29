@@ -24,4 +24,8 @@ commands:
     description: Show the current build number
     usage: /<command> build
     permission: op
+  bugreport:
+    description: Submit a bug report to the server admins
+    usage: /<command> <description of the bug>
+    aliases: [bug, reportbug]
 buildNumber: ${buildNumber}

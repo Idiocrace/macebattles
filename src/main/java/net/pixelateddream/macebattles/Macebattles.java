@@ -1,5 +1,6 @@
 package net.pixelateddream.macebattles;
 
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -78,6 +79,10 @@ public final class Macebattles extends JavaPlugin implements Listener {
 
         MbBuildCommand mbBuildCommand = new MbBuildCommand(this);
         this.getCommand("mb").setExecutor(mbBuildCommand);
+
+        // Register BugReportCommand
+        BugReportCommand bugReportCommand = new BugReportCommand(getDataFolder());
+        this.getCommand("bugreport").setExecutor(bugReportCommand);
 
         this.getCommand("duels").setExecutor((sender, command, label, args) -> {
             if (args.length == 2 && args[0].equalsIgnoreCase("setkit")) {
