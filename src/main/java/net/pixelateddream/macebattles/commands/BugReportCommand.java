@@ -57,6 +57,7 @@ public class BugReportCommand implements CommandExecutor {
         }
         cooldowns.put(uuid, now);
         player.sendMessage(ChatColor.GREEN + "Thank you for your bug report!");
+        player.sendMessage(ChatColor.GREEN + "You may be contacted for more info and/or receive a reward for the report.");
         // Optionally notify admins online
         Bukkit.getOnlinePlayers().stream().filter(p -> p.hasPermission("macebattles.bugreport.notify")).forEach(p ->
             p.sendMessage(ChatColor.YELLOW + "[BugReport] " + player.getName() + ": " + report)

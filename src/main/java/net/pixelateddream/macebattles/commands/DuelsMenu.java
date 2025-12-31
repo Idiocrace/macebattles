@@ -40,53 +40,18 @@ public class DuelsMenu {
         String rankGroup = getRankGroup(rating);
         String rankColor = getRankColor(rating);
 
-        // Get leaderboard place 1 (cached, triggers re-request if expired)
-        String topPlayerName = "Loading...";
-        int topPlayerRating = 0;
-        boolean leaderboardLoaded = false;
-        LeaderboardPlayer top = isConnected ? listener.getLeaderboardPlace(1) : null;
-        if (top != null && top.getName() != null && !top.getName().isEmpty()) {
-            topPlayerName = listener.getPlayerNameFromUUID(top.getName());
-            topPlayerRating = top.getRating();
-            leaderboardLoaded = true;
-        }
-
-        // If leaderboard not loaded, schedule a refresh when the response arrives
-        if (isConnected && !leaderboardLoaded) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                // Only refresh if player still has the menu open
-                if (player.getOpenInventory() != null && player.getOpenInventory().getTitle().equals("§6§lDUELS MENU")) {
-                    openMainMenu(player);
-                }
-            }, 20L); // 1 second delay
-        }
-
         // Rating display (icon changes by rank)
-        Material statsMaterial;
-        switch (rankGroup.toLowerCase()) {
-            case "withered":
-                statsMaterial = Material.WITHER_SKELETON_SKULL;
-                break;
-            case "netherite":
-                statsMaterial = Material.NETHERITE_INGOT;
-                break;
-            case "diamond":
-                statsMaterial = Material.DIAMOND;
-                break;
-            case "gold":
-                statsMaterial = Material.GOLD_INGOT;
-                break;
-            case "iron":
-                statsMaterial = Material.IRON_INGOT;
-                break;
-            case "stone":
-                statsMaterial = Material.STONE;
-                break;
-            case "dirt":
-            default:
-                statsMaterial = Material.DIRT;
-                break;
-        }
+        Material statsMaterial = switch (rankGroup.toLowerCase()) {
+            case "withered" -> Material.WITHER_SKELETON_SKULL;
+            case "netherite" -> Material.NETHERITE_INGOT;
+            case "diamond" -> Material.DIAMOND;
+            case "gold" -> Material.GOLD_INGOT;
+            case "iron" -> Material.IRON_INGOT;
+            case "stone" -> Material.STONE;
+            case "dirt" -> Material.DIRT;
+            case "unranked" -> Material.BOOK;
+            default -> Material.BARRIER; // For invalid rank
+        };
 
         // Rating display (center) - or barrier if not connected
         ItemStack ratingItem;
@@ -99,9 +64,6 @@ public class DuelsMenu {
             ratingMeta.setLore(Arrays.asList(
                 "§7Rating: §e" + rating,
                 "§7Rank: " + rankColor + rankGroup,
-                "",
-                "§7Top Player:",
-                "§e" + topPlayerName + " §7(" + topPlayerRating + ")",
                 "",
                 "§7Play ranked matches to",
                 "§7improve your rating!"
@@ -199,6 +161,7 @@ public class DuelsMenu {
      * Determines rank group based on rating
      */
     private String getRankGroup(int rating) {
+        if (rating == -1) return "Unranked";
         if (rating < 1100) return "Dirt";
         if (rating < 1250) return "Stone";
         if (rating < 1400) return "Iron";
@@ -212,6 +175,7 @@ public class DuelsMenu {
      * Gets the color code for a rank group
      */
     private String getRankColor(int rating) {
+        if (getRankGroup(rating).equals("Unranked")) return "§c"; // Red
         if (rating < 1100) return "§7"; // Gray
         if (rating < 1250) return "§7"; // Gray
         if (rating < 1400) return "§f"; // White

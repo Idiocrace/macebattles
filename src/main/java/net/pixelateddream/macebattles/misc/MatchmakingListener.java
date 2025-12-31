@@ -3,6 +3,9 @@ package net.pixelateddream.macebattles;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import net.pixelateddream.macebattles.match.ActiveMatch;
+import net.pixelateddream.macebattles.match.ArenaInstance;
+import net.pixelateddream.macebattles.match.KitManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -35,12 +38,6 @@ public class MatchmakingListener {
     private final Map<String, Integer> roundTimers = new HashMap<>(); // Track round timer task IDs
     private final String serverUri; // Store URI for reconnection attempts
     private int reconnectTaskId = -1; // Track reconnection task
-
-    private List<LeaderboardPlayer> leaderboardCache = new ArrayList<>();
-    // Cache for leaderboard place responses: place -> (LeaderboardPlayer, timestamp)
-    private final Map<Integer, LeaderboardPlayer> leaderboardPlaceCache = new HashMap<>();
-    private final Map<Integer, Long> leaderboardPlaceCacheTime = new HashMap<>();
-    private static final long LEADERBOARD_CACHE_MS = 60_000; // 1 minute
 
     public MatchmakingListener(Macebattles plugin, String serverUri) {
         this.plugin = plugin;
@@ -165,9 +162,6 @@ public class MatchmakingListener {
                     break;
                 case "error":
                     handleError(data);
-                    break;
-                case "leaderboard_response":
-                    handleLeaderboardResponse(data);
                     break;
                 default:
                     plugin.getLogger().warning("Unknown message type: " + type);
@@ -577,90 +571,6 @@ public class MatchmakingListener {
         if (count > 0) {
             plugin.getLogger().info("Cleared " + count + " player(s) from queue");
         }
-    }
-
-    /**
-     * Returns the cached leaderboard (top players)
-     */
-    public List<LeaderboardPlayer> getLeaderboard() {
-        return leaderboardCache;
-    }
-
-    /**
-     * Fetches leaderboard from matchmaking server REST API and updates cache
-     */
-    public void updateLeaderboard() {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            try {
-                java.net.URL url = new java.net.URL("http://localhost:8000/api/ratings?limit=100&sort_by=rating");
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setConnectTimeout(3000);
-                conn.setReadTimeout(3000);
-                int responseCode = conn.getResponseCode();
-                if (responseCode == 200) {
-                    java.io.InputStream is = conn.getInputStream();
-                    java.util.Scanner scanner = new java.util.Scanner(is, "UTF-8").useDelimiter("\\A");
-                    String json = scanner.hasNext() ? scanner.next() : "";
-                    scanner.close();
-                    is.close();
-                    JsonObject obj = gson.fromJson(json, JsonObject.class);
-                    JsonArray players = obj.getAsJsonArray("players");
-                    List<LeaderboardPlayer> leaderboard = new ArrayList<>();
-                    for (int i = 0; i < players.size(); i++) {
-                        JsonObject p = players.get(i).getAsJsonObject();
-                        String name = p.has("player_uuid") ? p.get("player_uuid").getAsString() : "Unknown";
-                        int rating = p.has("rating") ? p.get("rating").getAsInt() : 1000;
-                        leaderboard.add(new LeaderboardPlayer(name, rating, null));
-                    }
-                    leaderboardCache = leaderboard;
-                    plugin.getLogger().info("Leaderboard updated: " + leaderboard.size() + " players");
-                } else {
-                    plugin.getLogger().warning("Failed to fetch leaderboard: HTTP " + responseCode);
-                }
-            } catch (Exception e) {
-                plugin.getLogger().warning("Error updating leaderboard: " + e.getMessage());
-            }
-        });
-    }
-
-    /**
-     * Requests a leaderboard place from matchmaking server (WebSocket)
-     */
-    public void requestLeaderboardPlace(int place) {
-        if (!isConnected()) return;
-        try {
-            com.google.gson.JsonObject msg = new com.google.gson.JsonObject();
-            msg.addProperty("type", "leaderboard");
-            msg.addProperty("place", place);
-            sendJson(msg);
-            plugin.getLogger().info("Requested leaderboard place " + place + " from matchmaking server");
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to request leaderboard place: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Get cached leaderboard player for a place (1-based). If cache is expired, re-request and return null.
-     */
-    public LeaderboardPlayer getLeaderboardPlace(int place) {
-        Long ts = leaderboardPlaceCacheTime.get(place);
-        if (ts == null || System.currentTimeMillis() - ts > LEADERBOARD_CACHE_MS) {
-            // Expired or missing, re-request
-            requestLeaderboardPlace(place);
-            return null;
-        }
-        return leaderboardPlaceCache.get(place);
-    }
-
-    private void handleLeaderboardResponse(JsonObject data) {
-        if (!data.has("place") || !data.has("player_uuid") || !data.has("rating")) return;
-        int place = data.get("place").getAsInt();
-        String uuid = data.get("player_uuid").getAsString();
-        int rating = data.get("rating").getAsInt();
-        leaderboardPlaceCache.put(place, new LeaderboardPlayer(uuid, rating, null));
-        leaderboardPlaceCacheTime.put(place, System.currentTimeMillis());
-        plugin.getLogger().info("Cached leaderboard place " + place + ": " + uuid + " (" + rating + ")");
     }
 
     /**
