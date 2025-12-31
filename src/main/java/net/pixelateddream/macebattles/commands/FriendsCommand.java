@@ -1,7 +1,8 @@
-package net.pixelateddream.macebattles.player.friend;
+package net.pixelateddream.macebattles.commands;
 
 //import net.pixelateddream.macebattles.Macebattles;
 
+import net.pixelateddream.macebattles.player.friend.FriendsManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

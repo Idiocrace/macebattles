@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/MaceBattles.iml" filepath="$PROJECT_DIR$/.idea/modules/MaceBattles.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/MaceBattles.main.iml" filepath="$PROJECT_DIR$/.idea/modules/MaceBattles.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/MaceBattles.test.iml" filepath="$PROJECT_DIR$/.idea/modules/MaceBattles.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/net.pixelateddream.MaceBattles.main.iml" filepath="$PROJECT_DIR$/.idea/modules/net.pixelateddream.MaceBattles.main.iml" />
     </modules>
   </component>
 </project>

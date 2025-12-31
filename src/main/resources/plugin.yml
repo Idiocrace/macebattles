@@ -1,5 +1,5 @@
 name: macebattles
-version: '1.0-0'
+version: '1'
 main: net.pixelateddream.macebattles.Macebattles
 api-version: '1.21'
 authors: [ deltathedumb, PixelatedDream ]
@@ -28,4 +28,12 @@ commands:
     description: Submit a bug report to the server admins
     usage: /<command> <description of the bug>
     aliases: [bug, reportbug]
+  friends:
+    description: Manage your friends list
+    usage: |
+      /<command> add <player> - Add a player to your friends list
+      /<command> remove <player> - Remove a player from your friends list
+      /<command> list - Show your friends list
+      /<command> accept <player> - Accept a friend request
+      /<command> deny <player> - Deny a friend request
 buildNumber: ${buildNumber}

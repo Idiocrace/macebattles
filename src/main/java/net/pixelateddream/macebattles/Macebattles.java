@@ -48,6 +48,10 @@ public final class Macebattles extends JavaPlugin implements Listener {
         // Initialize friends storage
         this.friendsStorageManager = new FriendsStorageManager(getDataFolder(), getLogger());
 
+        // Initialize notification cache manager
+        new NotificationCacheManager(getDataFolder(), getLogger());
+        Notification.setPlugin(this); // Set static plugin reference in Notification class
+
         // Load entity command links from disk
         Map<UUID, EntityCommandLink> loadedLinks = entityCommandStorage.loadLinks();
         entityCommandLinks.putAll(loadedLinks);
@@ -88,6 +92,11 @@ public final class Macebattles extends JavaPlugin implements Listener {
         // Register BugReportCommand
         BugReportCommand bugReportCommand = new BugReportCommand(getDataFolder());
         Objects.requireNonNull(this.getCommand("bugreport")).setExecutor(bugReportCommand);
+
+        // Register FriendsCommand
+        FriendsCommand friendsCommand = new FriendsCommand();
+        Objects.requireNonNull(this.getCommand("friends")).setExecutor(friendsCommand);
+        Objects.requireNonNull(this.getCommand("friends")).setTabCompleter(friendsCommand);
 
         // Register PlayerJoinEvents
         new JoinMessage(this);
