@@ -8,8 +8,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-
-import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,23 +16,20 @@ import java.util.Arrays;
 import java.util.List;
 
 public class FriendsCommand implements CommandExecutor, TabCompleter {
-    private Macebattles plugin;
-    private final FriendsManager friendsManager = new FriendsManager(plugin);
+    private final FriendsManager friendsManager;
 
     public FriendsCommand(Macebattles plugin) {
-        this.plugin = plugin;
+        this.friendsManager = new FriendsManager(plugin);
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("§cOnly players can use this command");
             return true;
         }
-        Player player = (Player) sender;
 
         if (args.length == 0) {
-            // Will open friends menu when I implement GUI
             sender.sendMessage("§cNo menu implemented");
             sender.sendMessage("§eUsage: /friend <add|remove|list|accept|deny> [player]");
             return true;
@@ -110,10 +105,9 @@ public class FriendsCommand implements CommandExecutor, TabCompleter {
     @Nullable
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             return List.of();
         }
-        Player player = (Player) sender;
 
         if (args.length == 1) {
             return Arrays.asList("add", "remove", "list", "accept", "deny");
