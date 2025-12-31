@@ -6,12 +6,14 @@ import net.pixelateddream.macebattles.match.KitManager;
 import net.pixelateddream.macebattles.match.MapManager;
 import net.pixelateddream.macebattles.match.MatchDeathListener;
 import net.pixelateddream.macebattles.match.PlayerDisconnectListener;
+import net.pixelateddream.macebattles.misc.EarlyAccessPaywall;
 import net.pixelateddream.macebattles.misc.JoinMessage;
 import net.pixelateddream.macebattles.misc.MatchmakingListener;
 import net.pixelateddream.macebattles.player.NoCacheFileException;
 import net.pixelateddream.macebattles.player.Notification;
 import net.pixelateddream.macebattles.player.NotificationCacheManager;
 import net.pixelateddream.macebattles.player.friend.FriendsStorageManager;
+import net.pixelateddream.macebattles.util.AsyncPlayerPreLoginEventHook;
 import net.pixelateddream.macebattles.util.PlayerJoinEventHook;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -76,6 +78,7 @@ public final class Macebattles extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new EntityCommandListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityLinkingListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinEventHook(), this);
+        getServer().getPluginManager().registerEvents(new AsyncPlayerPreLoginEventHook(), this);
 
         // Register commands
         DuelsCommand duelsCommand = new DuelsCommand(this);
@@ -94,9 +97,12 @@ public final class Macebattles extends JavaPlugin implements Listener {
         Objects.requireNonNull(this.getCommand("bugreport")).setExecutor(bugReportCommand);
 
         // Register FriendsCommand
-        FriendsCommand friendsCommand = new FriendsCommand(this);
+        FriendsCommand friendsCommand = new FriendsCommand();
         Objects.requireNonNull(this.getCommand("friends")).setExecutor(friendsCommand);
         Objects.requireNonNull(this.getCommand("friends")).setTabCompleter(friendsCommand);
+
+        // Register AsyncPlayerPreLoginEvents
+        new EarlyAccessPaywall(getDataFolder());
 
         // Register PlayerJoinEvents
         new JoinMessage(this);

@@ -1,78 +1,72 @@
 package net.pixelateddream.macebattles.player.friend;
 
-import net.pixelateddream.macebattles.Macebattles;
-
-import org.bukkit.entity.Player;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
-// Class for mostly just helper functions related to managing friend
-// Everything is static/stateless just due to the simple mechanics needed
 public class FriendsManager {
-    private final Macebattles plugin;
+    private final Map<UUID, Set<UUID>> friends = new ConcurrentHashMap<>();
+    private final Map<UUID, Set<UUID>> pendingRequests = new ConcurrentHashMap<>();
 
-    public FriendsManager(Macebattles plugin) {
-        this.plugin = plugin;
+    public FriendsManager() {
     }
 
-    // Tidy up function later (organize, simplify, and document)
-    public void addFriend(Player playerOne, Player playerTwo) {
-        UUID playerOneUuid = playerOne.getUniqueId();
-        UUID playerTwoUuid = playerTwo.getUniqueId();
-        plugin.addFriend(playerOneUuid, playerTwoUuid);
+    public void sendFriendRequest(Player from, Player to) {
+        if (from == null || to == null) return;
+        pendingRequests.computeIfAbsent(to.getUniqueId(), k -> ConcurrentHashMap.newKeySet())
+                .add(from.getUniqueId());
     }
-    // Tidy up function later (organize, simplify, and document)
-    public void removeFriend(Player playerOne, Player playerTwo) {
-        UUID playerOneUuid = playerOne.getUniqueId();
-        UUID playerTwoUuid = playerTwo.getUniqueId();
-        plugin.removeFriend(playerOneUuid, playerTwoUuid);
+
+    public void acceptFriendRequest(Player accepter, Player requester) {
+        if (accepter == null || requester == null) return;
+        // remove pending
+        Set<UUID> raw = pendingRequests.get(accepter.getUniqueId());
+        if (raw != null) raw.remove(requester.getUniqueId());
+
+        // add to friends both ways
+        friends.computeIfAbsent(accepter.getUniqueId(), k -> ConcurrentHashMap.newKeySet())
+                .add(requester.getUniqueId());
+        friends.computeIfAbsent(requester.getUniqueId(), k -> ConcurrentHashMap.newKeySet())
+                .add(accepter.getUniqueId());
     }
-    // Tidy up function later (organize, simplify, and document)
+
+    public void denyFriendRequest(Player accepter, Player requester) {
+        if (accepter == null || requester == null) return;
+        Set<UUID> raw = pendingRequests.get(accepter.getUniqueId());
+        if (raw != null) raw.remove(requester.getUniqueId());
+    }
+
+    public void removeFriend(Player remover, Player target) {
+        if (remover == null || target == null) return;
+        Set<UUID> a = friends.get(remover.getUniqueId());
+        if (a != null) a.remove(target.getUniqueId());
+        Set<UUID> b = friends.get(target.getUniqueId());
+        if (b != null) b.remove(remover.getUniqueId());
+    }
+
     public List<Player> getFriendsList(Player player) {
-        UUID targetPlayerUuid = player.getUniqueId();
-        Map<UUID, List<UUID>> globalFriendsData = plugin.getFriendsData();
-        List<UUID> rawTargetFriendsList = globalFriendsData.get(targetPlayerUuid);
-        List<Player> targetFriendsList = new ArrayList<>(List.of());
-        for (UUID friendUuid : rawTargetFriendsList) {
-            Player friend = Bukkit.getPlayer(friendUuid);
-            targetFriendsList.add(friend);
+        if (player == null) return Collections.emptyList();
+        Set<UUID> raw = friends.get(player.getUniqueId());
+        if (raw == null || raw.isEmpty()) return Collections.emptyList();
+        List<Player> result = new ArrayList<>();
+        for (UUID id : raw) {
+            Player p = Bukkit.getPlayer(id);
+            if (p != null) result.add(p);
         }
-        return targetFriendsList;
+        return result;
     }
 
-    // Tidy up function later (organize, simplify, and document)
-    public void sendFriendRequest(Player sender, Player receiver) {
-        UUID senderUuid = sender.getUniqueId();
-        UUID receiverUuid = receiver.getUniqueId();
-        plugin.addFriendRequest(senderUuid, receiverUuid);
-    }
-    // Tidy up function later (organize, simplify, and document)
-    public void removeFriendRequest(Player sender, Player receiver) {
-        UUID senderUuid = sender.getUniqueId();
-        UUID receiverUuid = receiver.getUniqueId();
-        plugin.removeFriendRequest(senderUuid, receiverUuid);
-    }
-    // Tidy up function later (organize, simplify, and document)
     public List<Player> getPendingFriendRequests(Player player) {
-        UUID targetPlayerUuid = player.getUniqueId();
-        Map<UUID, List<UUID>> globalFriendRequestsData = plugin.getFriendRequests();
-        List<UUID> rawPendingRequestsList = globalFriendRequestsData.get(targetPlayerUuid);
-        List<Player> pendingRequestsList = new ArrayList<>(List.of());
-        for (UUID requesterUuid : rawPendingRequestsList) {
-            Player requester = Bukkit.getPlayer(requesterUuid);
-            pendingRequestsList.add(requester);
+        if (player == null) return Collections.emptyList();
+        Set<UUID> rawPending = pendingRequests.get(player.getUniqueId());
+        if (rawPending == null || rawPending.isEmpty()) return Collections.emptyList();
+        List<Player> result = new ArrayList<>();
+        for (UUID id : rawPending) {
+            Player p = Bukkit.getPlayer(id);
+            if (p != null) result.add(p);
         }
-        return pendingRequestsList;
+        return result;
     }
-    // Tidy up function later (organize, simplify, and document)
-    public void acceptFriendRequest(Player receiver, Player sender) {
-        addFriend(receiver, sender);
-        removeFriendRequest(sender, receiver);
-    }
-    // Tidy up function later (organize, simplify, and document)
-    public void denyFriendRequest(Player receiver, Player sender) {
-        removeFriendRequest(sender, receiver);
-    }
-
 }

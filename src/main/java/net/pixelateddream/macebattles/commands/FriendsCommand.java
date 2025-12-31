@@ -1,6 +1,5 @@
 package net.pixelateddream.macebattles.commands;
 
-import net.pixelateddream.macebattles.Macebattles;
 import net.pixelateddream.macebattles.player.friend.FriendsManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -18,8 +17,8 @@ import java.util.List;
 public class FriendsCommand implements CommandExecutor, TabCompleter {
     private final FriendsManager friendsManager;
 
-    public FriendsCommand(Macebattles plugin) {
-        this.friendsManager = new FriendsManager(plugin);
+    public FriendsCommand() {
+        this.friendsManager = new FriendsManager();
     }
 
     @Override
@@ -49,6 +48,7 @@ public class FriendsCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 friendsManager.sendFriendRequest(player, targetPlayer);
+                sender.sendMessage("§eFriend request sent");
                 return true;
             }
             case "remove":
@@ -63,6 +63,7 @@ public class FriendsCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 friendsManager.removeFriend(player, targetPlayer);
+                sender.sendMessage("§cFriend removed");
                 return true;
             }
             case "accept":
@@ -77,6 +78,7 @@ public class FriendsCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 friendsManager.acceptFriendRequest(player, requestSender);
+                sender.sendMessage("§aFriend request accepted");
                 return true;
             }
             case "deny":
@@ -91,10 +93,15 @@ public class FriendsCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 friendsManager.denyFriendRequest(player, requestSender);
+                sender.sendMessage("§cFriend request denied");
                 return true;
             }
             case "list":
                 friendsManager.getFriendsList(player);
+                sender.sendMessage("§e§lYour friends:");
+                for (Player friend : friendsManager.getFriendsList(player)) {
+                    sender.sendMessage("§e- " + friend.getName());
+                }
                 return true;
             default:
                 sender.sendMessage("§cUnknown subcommand: " + actionOne);
