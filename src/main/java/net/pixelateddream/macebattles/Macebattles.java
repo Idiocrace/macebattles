@@ -94,7 +94,7 @@ public final class Macebattles extends JavaPlugin implements Listener {
         Objects.requireNonNull(this.getCommand("bugreport")).setExecutor(bugReportCommand);
 
         // Register FriendsCommand
-        FriendsCommand friendsCommand = new FriendsCommand();
+        FriendsCommand friendsCommand = new FriendsCommand(this);
         Objects.requireNonNull(this.getCommand("friends")).setExecutor(friendsCommand);
         Objects.requireNonNull(this.getCommand("friends")).setTabCompleter(friendsCommand);
 

@@ -10,24 +10,26 @@ import java.util.*;
 // Class for mostly just helper functions related to managing friend
 // Everything is static/stateless just due to the simple mechanics needed
 public class FriendsManager {
-    private static Macebattles plugin = new Macebattles();
+    private final Macebattles plugin;
 
-    public FriendsManager(Macebattles plugin) { FriendsManager.plugin = plugin; }
+    public FriendsManager(Macebattles plugin) {
+        this.plugin = plugin;
+    }
 
     // Tidy up function later (organize, simplify, and document)
-    public static void addFriend(Player playerOne, Player playerTwo) {
+    public void addFriend(Player playerOne, Player playerTwo) {
         UUID playerOneUuid = playerOne.getUniqueId();
         UUID playerTwoUuid = playerTwo.getUniqueId();
         plugin.addFriend(playerOneUuid, playerTwoUuid);
     }
     // Tidy up function later (organize, simplify, and document)
-    public static void removeFriend(Player playerOne, Player playerTwo) {
+    public void removeFriend(Player playerOne, Player playerTwo) {
         UUID playerOneUuid = playerOne.getUniqueId();
         UUID playerTwoUuid = playerTwo.getUniqueId();
         plugin.removeFriend(playerOneUuid, playerTwoUuid);
     }
     // Tidy up function later (organize, simplify, and document)
-    public static List<Player> getFriendsList(Player player) {
+    public List<Player> getFriendsList(Player player) {
         UUID targetPlayerUuid = player.getUniqueId();
         Map<UUID, List<UUID>> globalFriendsData = plugin.getFriendsData();
         List<UUID> rawTargetFriendsList = globalFriendsData.get(targetPlayerUuid);
@@ -40,19 +42,19 @@ public class FriendsManager {
     }
 
     // Tidy up function later (organize, simplify, and document)
-    public static void sendFriendRequest(Player sender, Player receiver) {
+    public void sendFriendRequest(Player sender, Player receiver) {
         UUID senderUuid = sender.getUniqueId();
         UUID receiverUuid = receiver.getUniqueId();
         plugin.addFriendRequest(senderUuid, receiverUuid);
     }
     // Tidy up function later (organize, simplify, and document)
-    public static void removeFriendRequest(Player sender, Player receiver) {
+    public void removeFriendRequest(Player sender, Player receiver) {
         UUID senderUuid = sender.getUniqueId();
         UUID receiverUuid = receiver.getUniqueId();
         plugin.removeFriendRequest(senderUuid, receiverUuid);
     }
     // Tidy up function later (organize, simplify, and document)
-    public static List<Player> getPendingFriendRequests(Player player) {
+    public List<Player> getPendingFriendRequests(Player player) {
         UUID targetPlayerUuid = player.getUniqueId();
         Map<UUID, List<UUID>> globalFriendRequestsData = plugin.getFriendRequests();
         List<UUID> rawPendingRequestsList = globalFriendRequestsData.get(targetPlayerUuid);
@@ -64,12 +66,12 @@ public class FriendsManager {
         return pendingRequestsList;
     }
     // Tidy up function later (organize, simplify, and document)
-    public static void acceptFriendRequest(Player receiver, Player sender) {
+    public void acceptFriendRequest(Player receiver, Player sender) {
         addFriend(receiver, sender);
         removeFriendRequest(sender, receiver);
     }
     // Tidy up function later (organize, simplify, and document)
-    public static void denyFriendRequest(Player receiver, Player sender) {
+    public void denyFriendRequest(Player receiver, Player sender) {
         removeFriendRequest(sender, receiver);
     }
 
