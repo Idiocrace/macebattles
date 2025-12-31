@@ -1,4 +1,4 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.match;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -10,11 +10,10 @@ import java.io.File;
 import java.io.IOException;
 
 public class KitManager {
-    private final File kitFile;
     private final FileConfiguration kitConfig;
 
     public KitManager(Plugin plugin) {
-        this.kitFile = new File(plugin.getDataFolder(), "kits.yml");
+        File kitFile = new File(plugin.getDataFolder(), "kits.yml");
         if (!kitFile.exists()) {
             try {
                 boolean created = kitFile.createNewFile();
@@ -26,17 +25,6 @@ public class KitManager {
         this.kitConfig = YamlConfiguration.loadConfiguration(kitFile);
     }
 
-    public void saveKit(Player player, String kitName) {
-        kitConfig.set(kitName + ".inventory", player.getInventory().getContents());
-        kitConfig.set(kitName + ".armor", player.getInventory().getArmorContents());
-        try {
-            kitConfig.save(kitFile);
-            player.sendMessage("§aKit saved for " + kitName + "!");
-        } catch (IOException e) {
-            player.sendMessage("§cFailed to save kit: " + e.getMessage());
-        }
-    }
-
     public void applyKit(Player player, String kitName) {
         java.util.List<?> invList = kitConfig.getList(kitName + ".inventory");
         java.util.List<?> armorList = kitConfig.getList(kitName + ".armor");
@@ -46,14 +34,10 @@ public class KitManager {
             inv = new ItemStack[invList.size()];
             for (int i = 0; i < invList.size(); i++) {
                 Object obj = invList.get(i);
-                if (obj == null) {
-                    inv[i] = null;
-                } else if (obj instanceof ItemStack) {
-                    inv[i] = (ItemStack) obj;
-                } else if (obj instanceof java.util.Map) {
-                    inv[i] = ItemStack.deserialize((java.util.Map<String, Object>) obj);
-                } else {
-                    inv[i] = null;
+                switch (obj) {
+                    case ItemStack itemStack -> inv[i] = itemStack;
+                    case java.util.Map ignored -> inv[i] = ItemStack.deserialize((java.util.Map<String, Object>) obj);
+                    case null, default -> inv[i] = null;
                 }
             }
         }
@@ -61,14 +45,10 @@ public class KitManager {
             armor = new ItemStack[armorList.size()];
             for (int i = 0; i < armorList.size(); i++) {
                 Object obj = armorList.get(i);
-                if (obj == null) {
-                    armor[i] = null;
-                } else if (obj instanceof ItemStack) {
-                    armor[i] = (ItemStack) obj;
-                } else if (obj instanceof java.util.Map) {
-                    armor[i] = ItemStack.deserialize((java.util.Map<String, Object>) obj);
-                } else {
-                    armor[i] = null;
+                switch (obj) {
+                    case ItemStack itemStack -> armor[i] = itemStack;
+                    case java.util.Map ignored -> armor[i] = ItemStack.deserialize((java.util.Map<String, Object>) obj);
+                    case null, default -> armor[i] = null;
                 }
             }
         }

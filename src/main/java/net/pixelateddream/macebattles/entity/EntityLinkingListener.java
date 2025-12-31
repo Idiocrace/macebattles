@@ -1,5 +1,6 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.entity;
 
+import net.pixelateddream.macebattles.Macebattles;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

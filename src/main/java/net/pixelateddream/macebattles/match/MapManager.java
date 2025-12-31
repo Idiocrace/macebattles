@@ -1,5 +1,6 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.match;
 
+import net.pixelateddream.macebattles.Macebattles;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -86,47 +87,7 @@ public class MapManager {
             return null;
         }
 
-        Structure structure = structureManager.loadStructure(structureFile);
-        return structure;
-    }
-
-    /**
-     * Creates an arena instance at a specific location
-     * @param world The world to create the arena in
-     * @param baseLocation The base location for the arena
-     * @param structureName The structure to load
-     * @param spawnPoints Relative spawn points from the base location
-     * @return ArenaInstance with spawn locations
-     */
-    public ArenaInstance createArenaInstance(World world, Location baseLocation,
-                                             String structureName, Map<Integer, BlockVector> spawnPoints) {
-        try {
-            Structure structure = loadStructure(structureName);
-            if (structure == null) {
-                return null;
-            }
-
-            // Place the structure at the base location
-            structure.place(baseLocation, true, StructureRotation.NONE,
-                    Mirror.NONE, 0, 1.0f, new Random());
-
-            // Calculate absolute spawn locations
-            String arenaId = structureName + "_" + System.currentTimeMillis();
-            ArenaInstance instance = new ArenaInstance(arenaId, baseLocation);
-
-            for (Map.Entry<Integer, BlockVector> entry : spawnPoints.entrySet()) {
-                BlockVector relative = entry.getValue();
-                Location spawnLoc = baseLocation.clone().add(relative.getX(), relative.getY(), relative.getZ());
-                instance.addSpawnPoint(entry.getKey(), spawnLoc);
-            }
-
-            activeArenas.put(arenaId, instance);
-            return instance;
-
-        } catch (IOException e) {
-            plugin.getLogger().severe("Failed to load structure: " + e.getMessage());
-            return null;
-        }
+        return structureManager.loadStructure(structureFile);
     }
 
     /**
@@ -150,15 +111,6 @@ public class MapManager {
     }
 
     /**
-     * Gets an active arena instance by ID
-     * @param arenaId The arena ID
-     * @return The arena instance, or null if not found
-     */
-    public ArenaInstance getArenaInstance(String arenaId) {
-        return activeArenas.get(arenaId);
-    }
-
-    /**
      * Removes an arena instance from tracking and cleans up the structure in the world
      * @param arenaId The arena ID to remove
      */
@@ -176,6 +128,7 @@ public class MapManager {
             for (int x = bx - radius; x <= bx + radius; x++) {
                 for (int y = by - 1; y <= by + 31; y++) {
                     for (int z = bz - radius; z <= bz + radius; z++) {
+                        assert world != null;
                         world.getBlockAt(x, y, z).setType(Material.AIR, false);
                     }
                 }
@@ -184,14 +137,6 @@ public class MapManager {
         } else {
             plugin.getLogger().warning("Tried to remove non-existent arena instance: " + arenaId);
         }
-    }
-
-    /**
-     * Gets all active arena instances
-     * @return Map of arena IDs to instances
-     */
-    public Map<String, ArenaInstance> getActiveArenas() {
-        return new HashMap<>(activeArenas);
     }
 
     /**
@@ -242,12 +187,11 @@ public class MapManager {
 
     /**
      * Creates an arena instance with automatic spawn point detection
-     * @param world The world to create the arena in
      * @param baseLocation The base location for the arena
      * @param structureName The structure to load
      * @return ArenaInstance with spawn locations
      */
-    public ArenaInstance createArenaInstanceWithDetection(World world, Location baseLocation, String structureName) {
+    public ArenaInstance createArenaInstanceWithDetection(Location baseLocation, String structureName) {
         try {
             Structure structure = loadStructure(structureName);
             if (structure == null) {
@@ -277,7 +221,6 @@ public class MapManager {
 
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to load structure: " + e.getMessage());
-            e.printStackTrace();
             return null;
         }
     }
@@ -320,19 +263,5 @@ public class MapManager {
         Location baseLocation = new Location(world, x, y, z);
 
         // Use the new detection method instead of hardcoded spawn points
-        return createArenaInstanceWithDetection(world, baseLocation, structureName);
-    }
-
-    /**
-     * Gets the leaderboard player for a given place (1-based)
-     * @param place Leaderboard place (1 = top)
-     * @return LeaderboardPlayer or null if not available
-     */
-    public LeaderboardPlayer getLeaderboardPlayer(int place) {
-        List<LeaderboardPlayer> leaderboard = plugin.getMatchmakingListener().getLeaderboard();
-        if (leaderboard != null && place > 0 && place <= leaderboard.size()) {
-            return leaderboard.get(place - 1);
-        }
-        return null;
-    }
-}
+        return createArenaInstanceWithDetection(baseLocation, structureName);
+    }}

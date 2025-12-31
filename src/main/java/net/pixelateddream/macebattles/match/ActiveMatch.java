@@ -1,5 +1,6 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.match;
 
+import net.pixelateddream.macebattles.misc.MatchmakingListener;
 import org.bukkit.Location;
 
 import java.util.HashMap;
@@ -64,20 +65,12 @@ public class ActiveMatch {
         return scores.getOrDefault(playerUUID, 0);
     }
 
-    public Map<UUID, Integer> getAllScores() {
-        return new HashMap<>(scores);
-    }
-
     public void setOriginalLocation(UUID playerUUID, Location location) {
         originalLocations.put(playerUUID, location);
     }
 
     public Location getOriginalLocation(UUID playerUUID) {
         return originalLocations.get(playerUUID);
-    }
-
-    public boolean isPlayerInMatch(UUID playerUUID) {
-        return player1UUID.equals(playerUUID) || player2UUID.equals(playerUUID);
     }
 
     public MatchmakingListener.QueueType getQueueType() {

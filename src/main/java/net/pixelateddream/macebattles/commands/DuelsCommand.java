@@ -1,11 +1,14 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.commands;
 
+import net.pixelateddream.macebattles.Macebattles;
+import net.pixelateddream.macebattles.misc.MatchmakingListener;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -19,13 +22,11 @@ public class DuelsCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("§cOnly players can use this command!");
             return true;
         }
-
-        Player player = (Player) sender;
 
         if (args.length == 0) {
             // Open the duels menu GUI
@@ -35,40 +36,22 @@ public class DuelsCommand implements CommandExecutor, TabCompleter {
 
         String subcommand = args[0].toLowerCase();
 
-        switch (subcommand) {
-            case "invite":
-            case "challenge":
-                return handleInvite(player, args);
-            
-            case "accept":
-                return handleAccept(player);
-            
-            case "deny":
-            case "decline":
-                return handleDeny(player);
-            
-            case "queue":
-            case "q":
-                return handleQueue(player, args);
-            
-            case "cancel":
-            case "leave":
-                return handleCancelQueue(player);
-
-            default:
-                sendHelp(player);
-                return true;
-        }
+        return switch (subcommand) {
+            case "invite", "challenge" -> handleInvite(player, args);
+            case "accept" -> handleAccept(player);
+            case "deny", "decline" -> handleDeny(player);
+            case "queue", "q" -> handleQueue(player, args);
+            case "cancel", "leave" -> handleCancelQueue(player);
+            default -> {
+                noArguments(player);
+                yield true;
+            }
+        };
     }
 
-    private void sendHelp(Player player) {
-        player.sendMessage("§e§l===== DUELS COMMANDS =====");
-        player.sendMessage("§e/duels invite <player> §7- Challenge a player to a duel");
-        player.sendMessage("§e/duels accept §7- Accept a pending duel");
-        player.sendMessage("§e/duels deny §7- Decline a pending duel");
-        player.sendMessage("§e/duels queue <casual|ranked> §7- Join matchmaking");
-        player.sendMessage("§e/duels cancel §7- Leave matchmaking queue");
-        player.sendMessage("§7Aliases: §e/duel, /d");
+    private void noArguments(Player player) {
+        // Open duels menu GUI
+        plugin.getDuelsMenu().openMainMenu(player);
     }
 
     private boolean handleInvite(Player sender, String[] args) {
@@ -122,8 +105,8 @@ public class DuelsCommand implements CommandExecutor, TabCompleter {
         // Auto-expire after 60 seconds
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (pendingDuels.remove(target.getUniqueId()) != null) {
-                Player senderNow = Bukkit.getPlayer(request.getSenderUUID());
-                Player targetNow = Bukkit.getPlayer(request.getTargetUUID());
+                Player senderNow = Bukkit.getPlayer(request.senderUUID());
+                Player targetNow = Bukkit.getPlayer(request.targetUUID());
 
                 if (senderNow != null) {
                     senderNow.sendMessage("§cDuel request to " + target.getName() + " expired");
@@ -145,7 +128,7 @@ public class DuelsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        Player challenger = Bukkit.getPlayer(request.getSenderUUID());
+        Player challenger = Bukkit.getPlayer(request.senderUUID());
 
         if (challenger == null) {
             accepter.sendMessage("§cThe player who challenged you is no longer online!");
@@ -190,7 +173,7 @@ public class DuelsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        Player challenger = Bukkit.getPlayer(request.getSenderUUID());
+        Player challenger = Bukkit.getPlayer(request.senderUUID());
 
         denier.sendMessage("§cYou declined the duel request");
         if (challenger != null) {
@@ -228,7 +211,6 @@ public class DuelsCommand implements CommandExecutor, TabCompleter {
             if (queueArg.equals("RANKED") || queueArg.equals("COMPETITIVE") || queueArg.equals("COMP")) {
                 queueType = MatchmakingListener.QueueType.RANKED;
             } else if (queueArg.equals("CASUAL") || queueArg.equals("CAS")) {
-                queueType = MatchmakingListener.QueueType.CASUAL;
             } else {
                 player.sendMessage("§cUsage: /duels queue <casual|ranked>");
                 return true;
@@ -254,7 +236,7 @@ public class DuelsCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
@@ -293,24 +275,9 @@ public class DuelsCommand implements CommandExecutor, TabCompleter {
     }
 
     /**
-     * Inner class to represent a duel request
-     */
-    private static class DuelRequest {
-        private final UUID senderUUID;
-        private final UUID targetUUID;
-
-        public DuelRequest(UUID senderUUID, UUID targetUUID) {
-            this.senderUUID = senderUUID;
-            this.targetUUID = targetUUID;
-        }
-
-        public UUID getSenderUUID() {
-            return senderUUID;
-        }
-
-        public UUID getTargetUUID() {
-            return targetUUID;
-        }
+         * Inner class to represent a duel request
+         */
+        private record DuelRequest(UUID senderUUID, UUID targetUUID) {
     }
 }
 

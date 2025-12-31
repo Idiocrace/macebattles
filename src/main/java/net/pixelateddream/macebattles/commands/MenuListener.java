@@ -1,4 +1,4 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.commands;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -7,19 +7,16 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 
 public class MenuListener implements Listener {
-    private final Macebattles plugin;
     private final DuelsMenu duelsMenu;
 
-    public MenuListener(Macebattles plugin, DuelsMenu duelsMenu) {
-        this.plugin = plugin;
+    public MenuListener(DuelsMenu duelsMenu) {
         this.duelsMenu = duelsMenu;
     }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        // Check if the inventory is a duels menu
+        // Inventory where the click happened
         Inventory inventory = event.getInventory();
-        if (inventory == null) return;
 
         String title = event.getView().getTitle();
         if (!title.equals("§6§lDUELS MENU")) {
@@ -30,11 +27,10 @@ public class MenuListener implements Listener {
         event.setCancelled(true);
 
         // Check if a player clicked
-        if (!(event.getWhoClicked() instanceof Player)) {
+        if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
 
-        Player player = (Player) event.getWhoClicked();
         int slot = event.getRawSlot();
 
         // Only handle clicks in the menu inventory (not player inventory)

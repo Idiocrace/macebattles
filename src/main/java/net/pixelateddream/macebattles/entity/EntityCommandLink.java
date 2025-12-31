@@ -1,4 +1,4 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.entity;
 
 import java.util.UUID;
 

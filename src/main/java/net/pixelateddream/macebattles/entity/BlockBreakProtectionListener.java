@@ -1,5 +1,6 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.entity;
 
+import net.pixelateddream.macebattles.Macebattles;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -60,11 +61,9 @@ public class BlockBreakProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         Entity damager = event.getDamager();
-        Entity victim = event.getEntity();
 
         // If damager is a player
-        if (damager instanceof Player) {
-            Player player = (Player) damager;
+        if (damager instanceof Player player) {
 
             // Allow damage if player is in an active match
             if (plugin.getMatchmakingListener() != null) {
@@ -90,8 +89,7 @@ public class BlockBreakProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     public void onEntityDamageGeneral(EntityDamageEvent event) {
         // Only protect players from environmental damage when not in matches
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
+        if (event.getEntity() instanceof Player player) {
 
             // Skip if already cancelled by another handler
             if (event.isCancelled()) {
@@ -117,8 +115,7 @@ public class BlockBreakProtectionListener implements Listener {
      */
     @EventHandler(priority = EventPriority.LOWEST)
     public void onHangingBreak(HangingBreakByEntityEvent event) {
-        if (event.getRemover() instanceof Player) {
-            Player player = (Player) event.getRemover();
+        if (event.getRemover() instanceof Player player) {
 
             // Allow ops in creative mode
             if (player.isOp() && player.getGameMode() == GameMode.CREATIVE) {
@@ -135,8 +132,7 @@ public class BlockBreakProtectionListener implements Listener {
      */
     @EventHandler(priority = EventPriority.LOWEST)
     public void onVehicleDamage(VehicleDamageEvent event) {
-        if (event.getAttacker() instanceof Player) {
-            Player player = (Player) event.getAttacker();
+        if (event.getAttacker() instanceof Player player) {
 
             // Allow ops in creative mode
             if (player.isOp() && player.getGameMode() == GameMode.CREATIVE) {

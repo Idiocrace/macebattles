@@ -1,5 +1,7 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.commands;
 
+import net.pixelateddream.macebattles.Macebattles;
+import net.pixelateddream.macebattles.misc.MatchmakingListener;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -25,22 +27,19 @@ public class DuelsMenu {
      * Opens the main duels menu for a player
      */
     public void openMainMenu(Player player) {
-        Inventory menu = Bukkit.createInventory(null, 9, "§6§lDUELS MENU");
+        Inventory menu = Bukkit.createInventory(null, 27, "§6§lDUELS MENU");
         MatchmakingListener listener = plugin.getMatchmakingListener();
         boolean isConnected = listener != null && listener.isConnected();
 
-        // Request fresh rating from matchmaking server (only if connected)
         if (isConnected) {
             listener.requestPlayerRating(player.getUniqueId());
-            // Note: Rating will be cached asynchronously when server responds
         }
 
-        // Get player's rating (may be cached from previous request or default)
         int rating = getPlayerRating(player.getUniqueId());
         String rankGroup = getRankGroup(rating);
         String rankColor = getRankColor(rating);
 
-        // Rating display (icon changes by rank)
+        // Rank display (slot 10)
         Material statsMaterial = switch (rankGroup.toLowerCase()) {
             case "withered" -> Material.WITHER_SKELETON_SKULL;
             case "netherite" -> Material.NETHERITE_INGOT;
@@ -50,45 +49,40 @@ public class DuelsMenu {
             case "stone" -> Material.STONE;
             case "dirt" -> Material.DIRT;
             case "unranked" -> Material.BOOK;
-            default -> Material.BARRIER; // For invalid rank
+            default -> Material.BARRIER;
         };
+        ItemStack rankItem = new ItemStack(statsMaterial);
+        ItemMeta rankMeta = rankItem.getItemMeta();
+        assert rankMeta != null;
+        rankMeta.setDisplayName("§6§lYour Ranked Stats");
+        rankMeta.setLore(Arrays.asList(
+            "§7Rating: §e" + rating,
+            "§7Rank: " + rankColor + rankGroup,
+            "",
+            "§7Play ranked matches to",
+            "§7improve your rating!"
+        ));
+        rankItem.setItemMeta(rankMeta);
+        menu.setItem(10, rankItem);
 
-        // Rating display (center) - or barrier if not connected
-        ItemStack ratingItem;
-        ItemMeta ratingMeta;
+        // Friends menu (slot 12)
+        ItemStack friendsItem = new ItemStack(Material.PLAYER_HEAD);
+        ItemMeta friendsMeta = friendsItem.getItemMeta();
+        assert friendsMeta != null;
+        friendsMeta.setDisplayName("§b§lFriends Menu");
+        friendsMeta.setLore(Arrays.asList(
+            "§7Manage your friends list",
+            "§7and see who's online!",
+            "",
+            "§b§cFeature coming soon"
+        ));
+        friendsItem.setItemMeta(friendsMeta);
+        menu.setItem(12, friendsItem);
 
-        if (isConnected) {
-            ratingItem = new ItemStack(statsMaterial);
-            ratingMeta = ratingItem.getItemMeta();
-            ratingMeta.setDisplayName("§6§lYour Ranked Stats");
-            ratingMeta.setLore(Arrays.asList(
-                "§7Rating: §e" + rating,
-                "§7Rank: " + rankColor + rankGroup,
-                "",
-                "§7Play ranked matches to",
-                "§7improve your rating!"
-            ));
-        } else {
-            ratingItem = new ItemStack(Material.BARRIER);
-            ratingMeta = ratingItem.getItemMeta();
-            ratingMeta.setDisplayName("§c§lMatchmaking Not Connected");
-            ratingMeta.setLore(Arrays.asList(
-                "§7The matchmaking server is",
-                "§7currently unavailable.",
-                "",
-                "§7Duels are not available",
-                "§7at this time.",
-                "",
-                "§cRetrying connection..."
-            ));
-        }
-        ratingItem.setItemMeta(ratingMeta);
-        menu.setItem(4, ratingItem);
-
-        // Casual queue button (Stone Sword - left)
+        // Casual match (slot 14)
         ItemStack casualItem = new ItemStack(isConnected ? Material.STONE_SWORD : Material.GRAY_DYE);
         ItemMeta casualMeta = casualItem.getItemMeta();
-
+        assert casualMeta != null;
         if (isConnected) {
             casualMeta.setDisplayName("§e§lCasual Match");
             casualMeta.setLore(Arrays.asList(
@@ -112,12 +106,12 @@ public class DuelsMenu {
             ));
         }
         casualItem.setItemMeta(casualMeta);
-        menu.setItem(2, casualItem);
+        menu.setItem(14, casualItem);
 
-        // Ranked queue button (Netherite Sword - right)
+        // Ranked match (slot 16)
         ItemStack rankedItem = new ItemStack(isConnected ? Material.NETHERITE_SWORD : Material.GRAY_DYE);
         ItemMeta rankedMeta = rankedItem.getItemMeta();
-
+        assert rankedMeta != null;
         if (isConnected) {
             rankedMeta.setDisplayName("§6§lRanked Match");
             rankedMeta.setLore(Arrays.asList(
@@ -141,9 +135,10 @@ public class DuelsMenu {
             ));
         }
         rankedItem.setItemMeta(rankedMeta);
-        menu.setItem(6, rankedItem);
+        menu.setItem(16, rankedItem);
 
         player.openInventory(menu);
+
     }
 
 
@@ -197,8 +192,8 @@ public class DuelsMenu {
         MatchmakingListener listener = plugin.getMatchmakingListener();
         boolean isConnected = listener != null && listener.isConnected();
 
-        // Casual queue (slot 2)
-        if (slot == 2) {
+        // Casual queue (slot 14)
+        if (slot == 14) {
             player.closeInventory();
 
             if (!isConnected) {
@@ -217,9 +212,8 @@ public class DuelsMenu {
                 listener.queuePlayer(player, MatchmakingListener.QueueType.CASUAL);
             }
         }
-
-        // Ranked queue (slot 6)
-        else if (slot == 6) {
+        // Ranked queue (slot 16)
+        else if (slot == 16) {
             player.closeInventory();
 
             if (!isConnected) {
@@ -237,6 +231,12 @@ public class DuelsMenu {
                 }
                 listener.queuePlayer(player, MatchmakingListener.QueueType.RANKED);
             }
+        }
+        // Friends menu (slot 12)
+        else if (slot == 12) {
+            player.closeInventory();
+            player.sendMessage("§b§lFriends Menu");
+            player.sendMessage("§7This feature is coming soon.");
         }
     }
 

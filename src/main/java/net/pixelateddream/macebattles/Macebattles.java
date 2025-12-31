@@ -1,16 +1,25 @@
 package net.pixelateddream.macebattles;
 
-import org.bukkit.entity.Player;
+import net.pixelateddream.macebattles.commands.*;
+import net.pixelateddream.macebattles.entity.*;
+import net.pixelateddream.macebattles.match.KitManager;
+import net.pixelateddream.macebattles.match.MapManager;
+import net.pixelateddream.macebattles.match.MatchDeathListener;
+import net.pixelateddream.macebattles.match.PlayerDisconnectListener;
+import net.pixelateddream.macebattles.misc.JoinMessage;
+import net.pixelateddream.macebattles.misc.MatchmakingListener;
+import net.pixelateddream.macebattles.player.NoCacheFileException;
+import net.pixelateddream.macebattles.player.Notification;
+import net.pixelateddream.macebattles.player.NotificationCacheManager;
+import net.pixelateddream.macebattles.player.friend.FriendsStorageManager;
+import net.pixelateddream.macebattles.util.PlayerJoinEventHook;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public final class Macebattles extends JavaPlugin implements Listener {
@@ -26,10 +35,9 @@ public final class Macebattles extends JavaPlugin implements Listener {
     private final Map<UUID, Boolean> linkingModeConsoleExecutor = new HashMap<>();
     private final Set<UUID> playersInUnlinkingMode = new HashSet<>();
     private EntityCommandStorage entityCommandStorage;
+    private FriendsStorageManager friendsStorageManager;
 
-    private final Map<UUID, LeaderboardLink> leaderboardLinks = new HashMap<>();
-
-    private int buildNumber = 1;
+    private int buildNumber = 0;
     private KitManager kitManager;
 
     @Override
@@ -37,15 +45,13 @@ public final class Macebattles extends JavaPlugin implements Listener {
         // Initialize entity command storage
         this.entityCommandStorage = new EntityCommandStorage(getDataFolder(), getLogger());
 
+        // Initialize friends storage
+        this.friendsStorageManager = new FriendsStorageManager(getDataFolder(), getLogger());
+
         // Load entity command links from disk
         Map<UUID, EntityCommandLink> loadedLinks = entityCommandStorage.loadLinks();
         entityCommandLinks.putAll(loadedLinks);
         getLogger().info("Loaded " + loadedLinks.size() + " entity command links");
-
-        // Load leaderboard links from disk
-        Map<UUID, LeaderboardLink> loadedLeaderboardLinks = entityCommandStorage.loadLeaderboardLinks();
-        leaderboardLinks.putAll(loadedLeaderboardLinks);
-        getLogger().info("Loaded " + loadedLeaderboardLinks.size() + " leaderboard links");
 
         // Initialize MapManager
         this.mapManager = new MapManager(this);
@@ -59,52 +65,32 @@ public final class Macebattles extends JavaPlugin implements Listener {
         kitManager = new KitManager(this);
 
         // Register event listeners
-        getServer().getPluginManager().registerEvents(new MenuListener(this, duelsMenu), this);
+        getServer().getPluginManager().registerEvents(new MenuListener(duelsMenu), this);
         getServer().getPluginManager().registerEvents(new PlayerDisconnectListener(this), this);
         getServer().getPluginManager().registerEvents(new MatchDeathListener(this), this);
         getServer().getPluginManager().registerEvents(new BlockBreakProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityCommandListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityLinkingListener(this), this);
-        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
-        getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new PlayerJoinEventHook(), this);
 
         // Register commands
         DuelsCommand duelsCommand = new DuelsCommand(this);
-        this.getCommand("duels").setExecutor(duelsCommand);
-        this.getCommand("duels").setTabCompleter(duelsCommand);
+        Objects.requireNonNull(this.getCommand("duels")).setExecutor(duelsCommand);
+        Objects.requireNonNull(this.getCommand("duels")).setTabCompleter(duelsCommand);
 
         EntityCommandCommand entityCommandCommand = new EntityCommandCommand(this);
-        this.getCommand("entitycmd").setExecutor(entityCommandCommand);
-        this.getCommand("entitycmd").setTabCompleter(entityCommandCommand);
+        Objects.requireNonNull(this.getCommand("entitycmd")).setExecutor(entityCommandCommand);
+        Objects.requireNonNull(this.getCommand("entitycmd")).setTabCompleter(entityCommandCommand);
 
         MbBuildCommand mbBuildCommand = new MbBuildCommand(this);
-        this.getCommand("mb").setExecutor(mbBuildCommand);
+        Objects.requireNonNull(this.getCommand("mb")).setExecutor(mbBuildCommand);
 
         // Register BugReportCommand
         BugReportCommand bugReportCommand = new BugReportCommand(getDataFolder());
-        this.getCommand("bugreport").setExecutor(bugReportCommand);
+        Objects.requireNonNull(this.getCommand("bugreport")).setExecutor(bugReportCommand);
 
-        this.getCommand("duels").setExecutor((sender, command, label, args) -> {
-            if (args.length == 2 && args[0].equalsIgnoreCase("setkit")) {
-                if (!(sender instanceof Player)) {
-                    sender.sendMessage("Only players can use this command.");
-                    return true;
-                }
-                Player player = (Player) sender;
-                if (!player.isOp()) {
-                    player.sendMessage("§cOnly operators can use this command.");
-                    return true;
-                }
-                String kitType = args[1].toLowerCase();
-                if (!kitType.equals("ranked") && !kitType.equals("casual")) {
-                    player.sendMessage("§cUsage: /duels setkit <ranked|casual>");
-                    return true;
-                }
-                kitManager.saveKit(player, kitType);
-                return true;
-            }
-            return false;
-        });
+        // Register PlayerJoinEvents
+        new JoinMessage(this);
 
         loadBuildNumber();
 
@@ -117,12 +103,6 @@ public final class Macebattles extends JavaPlugin implements Listener {
         if (entityCommandStorage != null) {
             entityCommandStorage.saveLinks(entityCommandLinks);
             getLogger().info("Saved " + entityCommandLinks.size() + " entity command links");
-        }
-
-        // Save leaderboard links to disk
-        if (entityCommandStorage != null) {
-            entityCommandStorage.saveLeaderboardLinks(leaderboardLinks);
-            getLogger().info("Saved " + leaderboardLinks.size() + " leaderboard links");
         }
 
         // Clear all queues on shutdown
@@ -139,9 +119,8 @@ public final class Macebattles extends JavaPlugin implements Listener {
             // Read buildNumber from plugin.yml inside the jar
             InputStream in = getResource("plugin.yml");
             if (in != null) {
-                Properties props = new Properties();
                 // Convert YAML to properties (simple parse for buildNumber)
-                Scanner scanner = new Scanner(in, "UTF-8");
+                Scanner scanner = new Scanner(in, StandardCharsets.UTF_8);
                 while (scanner.hasNextLine()) {
                     String line = scanner.nextLine();
                     if (line.trim().startsWith("buildNumber:")) {
@@ -192,6 +171,71 @@ public final class Macebattles extends JavaPlugin implements Listener {
      */
     public void setPlayerRating(UUID playerUUID, int rating) {
         playerRatings.put(playerUUID, rating);
+    }
+
+    // ========== Notification Cache Methods ==========
+    /**
+     * Adds a notification to the cache
+     */
+    public void addNotification(Notification notification) {
+        NotificationCacheManager.storeNotification(notification);
+    }
+    /**
+     * Removes a notification from the cache
+     */
+    public void removeNotification(Notification notification) throws NoCacheFileException {
+        NotificationCacheManager.removeNotification(notification);
+    }
+    /**
+     * Gets all notifications cached (should not be necessary for most situations)
+     */
+    public Map<UUID, Notification> getAllNotifications() {
+        return NotificationCacheManager.getAllCachedNotifications();
+    }
+    /**
+     * Gets a cached notification by its ID
+     */
+    public Notification getNotification(UUID notificationId) throws NoCacheFileException {
+        return NotificationCacheManager.getCachedNotification(notificationId);
+    }
+
+    // ========== Friends Storage Manager Methods ==========
+    /**
+     * Gets the friends list for every player
+     */
+    public Map<UUID, List<UUID>> getFriendsData() {
+        return friendsStorageManager.loadFriends();
+    }
+
+    /**
+     * Adds a friend atomically
+     */
+    public void addFriend(UUID partyOneUuid, UUID partyTwoUuid) {
+        friendsStorageManager.saveFriend(partyOneUuid, partyTwoUuid);
+    }
+    /**
+     * Removes a friend atomically
+     */
+    public void removeFriend(UUID partyOneUuid, UUID partyTwoUuid) {
+        friendsStorageManager.removeFriend(partyOneUuid, partyTwoUuid);
+    }
+    /**
+     * Adds a friend request to the cache
+     */
+    public void addFriendRequest(UUID fromPlayer, UUID toPlayer) {
+        friendsStorageManager.addFriendRequest(fromPlayer, toPlayer);
+    }
+    /**
+     * Removes a friend request from the cache
+     */
+    public void removeFriendRequest(UUID fromPlayer, UUID toPlayer) {
+        friendsStorageManager.removeFriendRequest(fromPlayer, toPlayer);
+    }
+    /**
+     * Gets all friend requests in the cache
+     */
+    public Map<UUID, List<UUID>> getFriendRequests() {
+        return friendsStorageManager.loadFriendRequests();
     }
 
     // ========== Entity Command Link Methods ==========
@@ -293,36 +337,6 @@ public final class Macebattles extends JavaPlugin implements Listener {
      */
     public void clearPlayerUnlinkingMode(UUID playerUUID) {
         playersInUnlinkingMode.remove(playerUUID);
-    }
-
-    /**
-     * Adds a leaderboard link
-     */
-    public void addLeaderboardLink(UUID entityUUID, int place) {
-        leaderboardLinks.put(entityUUID, new LeaderboardLink(entityUUID, place));
-        if (entityCommandStorage != null) entityCommandStorage.saveLeaderboardLinks(leaderboardLinks);
-    }
-
-    /**
-     * Removes a leaderboard link
-     */
-    public void removeLeaderboardLink(UUID entityUUID) {
-        leaderboardLinks.remove(entityUUID);
-        if (entityCommandStorage != null) entityCommandStorage.saveLeaderboardLinks(leaderboardLinks);
-    }
-
-    /**
-     * Gets a leaderboard link
-     */
-    public LeaderboardLink getLeaderboardLink(UUID entityUUID) {
-        return leaderboardLinks.get(entityUUID);
-    }
-
-    /**
-     * Gets all leaderboard links
-     */
-    public List<LeaderboardLink> getAllLeaderboardLinks() {
-        return new ArrayList<>(leaderboardLinks.values());
     }
 
     @EventHandler

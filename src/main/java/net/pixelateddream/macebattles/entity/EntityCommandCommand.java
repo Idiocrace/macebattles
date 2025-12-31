@@ -1,5 +1,6 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.entity;
 
+import net.pixelateddream.macebattles.Macebattles;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -7,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,15 +21,13 @@ import java.util.UUID;
  */
 public class EntityCommandCommand implements CommandExecutor, TabCompleter {
     private final Macebattles plugin;
-    private final List<UUID> leaderboardLinkingPlayers = new ArrayList<>();
-    private final List<Integer> leaderboardLinkingPlaces = new ArrayList<>();
 
     public EntityCommandCommand(Macebattles plugin) {
         this.plugin = plugin;
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         // Only ops can use this command
         if (!sender.isOp()) {
             sender.sendMessage("§cYou must be an operator to use this command!");
@@ -45,21 +45,12 @@ public class EntityCommandCommand implements CommandExecutor, TabCompleter {
             case "link":
                 return handleLink(sender, args);
             case "unlink":
-                return handleUnlink(sender, args);
+                return handleUnlink(sender);
             case "list":
                 return handleList(sender);
             case "help":
                 sendHelp(sender);
                 return true;
-            case "leaderboard":
-                if (args.length >= 3 && args[1].equalsIgnoreCase("link")) {
-                    return handleLeaderboardLink(sender, args);
-                } else if (args.length >= 2 && args[1].equalsIgnoreCase("unlink")) {
-                    return handleLeaderboardUnlink(sender, args);
-                } else {
-                    sender.sendMessage("§cUsage: /entitycmd leaderboard link <place> or /entitycmd leaderboard unlink");
-                    return true;
-                }
             default:
                 sender.sendMessage("§cUnknown subcommand: " + subCommand);
                 sendHelp(sender);
@@ -72,7 +63,7 @@ public class EntityCommandCommand implements CommandExecutor, TabCompleter {
      * Usage: /entitycmd link <console|player> <command>
      */
     private boolean handleLink(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("§cOnly players can use this command!");
             return true;
         }
@@ -84,7 +75,6 @@ public class EntityCommandCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        Player player = (Player) sender;
         String executorType = args[1].toLowerCase();
         boolean consoleExecutor;
 
@@ -123,13 +113,11 @@ public class EntityCommandCommand implements CommandExecutor, TabCompleter {
      * Unlinks an entity from a command
      * Usage: /entitycmd unlink
      */
-    private boolean handleUnlink(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player)) {
+    private boolean handleUnlink(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("§cOnly players can use this command!");
             return true;
         }
-
-        Player player = (Player) sender;
 
         // Put player in unlinking mode
         plugin.setPlayerUnlinkingMode(player.getUniqueId());
@@ -207,52 +195,8 @@ public class EntityCommandCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("  §e%uuid% §7- Player's UUID");
     }
 
-    private boolean handleLeaderboardLink(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("§cOnly players can use this command!");
-            return true;
-        }
-        if (args.length < 3) {
-            sender.sendMessage("§cUsage: /entitycmd leaderboard link <place>");
-            sender.sendMessage("§7Example: /entitycmd leaderboard link 1");
-            sender.sendMessage("§7Then right-click an armor stand to link it.");
-            return true;
-        }
-        int place;
-        try {
-            place = Integer.parseInt(args[2]);
-            if (place < 1 || place > 100) {
-                sender.sendMessage("§cLeaderboard place must be between 1 and 100.");
-                return true;
-            }
-        } catch (NumberFormatException e) {
-            sender.sendMessage("§cLeaderboard place must be a number (e.g., 1, 2, 3).");
-            return true;
-        }
-        Player player = (Player) sender;
-        leaderboardLinkingPlayers.add(player.getUniqueId());
-        leaderboardLinkingPlaces.add(place);
-        player.sendMessage("§e§lLeaderboard Linking Mode");
-        player.sendMessage("§7Right-click an armor stand to link it to leaderboard place " + place + ".");
-        player.sendMessage("§7Use §e/entitycmd cancel §7to exit linking mode.");
-        return true;
-    }
-
-    private boolean handleLeaderboardUnlink(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("§cOnly players can use this command!");
-            return true;
-        }
-        Player player = (Player) sender;
-        plugin.setPlayerUnlinkingMode(player.getUniqueId());
-        player.sendMessage("§c§lLeaderboard Unlinking Mode");
-        player.sendMessage("§7Right-click an armor stand to unlink it from the leaderboard.");
-        player.sendMessage("§7Use §e/entitycmd cancel §7to exit unlinking mode.");
-        return true;
-    }
-
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+    public List<String> onTabComplete(CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (!sender.isOp()) {
             return new ArrayList<>();
         }
@@ -270,23 +214,5 @@ public class EntityCommandCommand implements CommandExecutor, TabCompleter {
         }
 
         return new ArrayList<>();
-    }
-
-    public boolean isLeaderboardLinking(UUID playerUUID) {
-        return leaderboardLinkingPlayers.contains(playerUUID);
-    }
-    public int getLeaderboardLinkingPlace(UUID playerUUID) {
-        int idx = leaderboardLinkingPlayers.indexOf(playerUUID);
-        if (idx >= 0 && idx < leaderboardLinkingPlaces.size()) {
-            return leaderboardLinkingPlaces.get(idx);
-        }
-        return 1;
-    }
-    public void clearLeaderboardLinking(UUID playerUUID) {
-        int idx = leaderboardLinkingPlayers.indexOf(playerUUID);
-        if (idx >= 0) {
-            leaderboardLinkingPlayers.remove(idx);
-            leaderboardLinkingPlaces.remove(idx);
-        }
     }
 }

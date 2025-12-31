@@ -1,4 +1,4 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.commands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

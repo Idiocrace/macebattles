@@ -1,8 +1,8 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.misc;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import net.pixelateddream.macebattles.Macebattles;
 import net.pixelateddream.macebattles.match.ActiveMatch;
 import net.pixelateddream.macebattles.match.ArenaInstance;
 import net.pixelateddream.macebattles.match.KitManager;
@@ -68,9 +68,7 @@ public class MatchmakingListener {
                     plugin.getLogger().info("Received message: " + message);
 
                     // Process on main thread for thread safety
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        handleMatchmakingMessage(message);
-                    });
+                    plugin.getServer().getScheduler().runTask(plugin, () -> handleMatchmakingMessage(message));
                 }
 
                 @Override
@@ -93,7 +91,6 @@ public class MatchmakingListener {
                 public void onError(Exception ex) {
                     plugin.getLogger().severe("✗ WebSocket error: " + ex.getMessage());
                     plugin.getLogger().severe("  This may affect matchmaking functionality.");
-                    ex.printStackTrace();
                 }
             };
 
@@ -103,7 +100,6 @@ public class MatchmakingListener {
         } catch (URISyntaxException e) {
             plugin.getLogger().severe("✗ Invalid WebSocket URI: " + serverUri);
             plugin.getLogger().severe("  Matchmaking will not be available!");
-            e.printStackTrace();
         } catch (Exception e) {
             plugin.getLogger().warning("✗ Failed to connect to matchmaking server: " + e.getMessage());
             plugin.getLogger().warning("  Will retry in 60 seconds...");
@@ -168,7 +164,6 @@ public class MatchmakingListener {
             }
         } catch (Exception e) {
             plugin.getLogger().severe("Error parsing matchmaking message: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -193,9 +188,7 @@ public class MatchmakingListener {
             Player player = Bukkit.getPlayer(playerUUID);
             if (player != null && player.getOpenInventory().getTitle().equals("§6§lDUELS MENU")) {
                 // Refresh the menu to show updated rating
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    plugin.getDuelsMenu().openMainMenu(player);
-                });
+                Bukkit.getScheduler().runTask(plugin, () -> plugin.getDuelsMenu().openMainMenu(player));
             }
         } catch (IllegalArgumentException e) {
             plugin.getLogger().warning("Invalid UUID in rating response: " + playerUuidStr);
@@ -208,7 +201,9 @@ public class MatchmakingListener {
     private void handleQueued(JsonObject data) {
         String mode = data.has("mode") ? data.get("mode").getAsString() : "casual";
         int rating = data.has("rating") ? data.get("rating").getAsInt() : 0;
-        String messageText = data.has("message") ? data.get("message").getAsString() : "Added to queue";
+        if (data.has("message")) {
+            data.get("message").getAsString();
+        }
 
         plugin.getLogger().info("Queue confirmation: " + mode + " (rating: " + rating + ")");
 
@@ -333,7 +328,7 @@ public class MatchmakingListener {
         String player1UuidStr = data.get("player1_uuid").getAsString();
         String player2UuidStr = data.get("player2_uuid").getAsString();
 
-        QueueType queueType = QueueType.CASUAL; // Default to casual, will be set by startMatch
+        QueueType queueType; // Default to casual, will be set by startMatch
         plugin.getLogger().info("Match found: " + matchUuid);
 
         // Parse player UUIDs
@@ -445,7 +440,6 @@ public class MatchmakingListener {
             player.sendMessage("§cAn error occurred while joining the queue.");
             player.sendMessage("§7Error: " + e.getMessage());
             plugin.getLogger().severe("Failed to queue player " + player.getName() + ": " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -505,7 +499,6 @@ public class MatchmakingListener {
             player.sendMessage("§c§lError!");
             player.sendMessage("§cFailed to leave queue: " + e.getMessage());
             plugin.getLogger().severe("Failed to dequeue player " + player.getName() + ": " + e.getMessage());
-            e.printStackTrace();
 
             // Still remove locally even if server communication fails
             queuedPlayers.remove(player.getUniqueId());
@@ -554,14 +547,6 @@ public class MatchmakingListener {
     }
 
     /**
-     * Gets the number of players currently in queue
-     * @return Number of queued players
-     */
-    public int getQueuedPlayerCount() {
-        return queuedPlayers.size();
-    }
-
-    /**
      * Clears all queue state (used on plugin disable or server errors)
      */
     public void clearAllQueues() {
@@ -571,18 +556,6 @@ public class MatchmakingListener {
         if (count > 0) {
             plugin.getLogger().info("Cleared " + count + " player(s) from queue");
         }
-    }
-
-    /**
-     * Utility: Get player name from UUID (online or offline)
-     */
-    public String getPlayerNameFromUUID(String uuid) {
-        try {
-            java.util.UUID u = java.util.UUID.fromString(uuid);
-            org.bukkit.OfflinePlayer p = Bukkit.getOfflinePlayer(u);
-            if (p != null && p.getName() != null) return p.getName();
-        } catch (Exception ignored) {}
-        return uuid;
     }
 
     /**
@@ -693,9 +666,7 @@ public class MatchmakingListener {
         }
 
         // Schedule round timeout after 3 minutes (in case nobody dies)
-        int taskId = Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            endRoundByTimeout(match);
-        }, 180 * 20L).getTaskId(); // 3 minutes
+        int taskId = Bukkit.getScheduler().runTaskLater(plugin, () -> endRoundByTimeout(match), 180 * 20L).getTaskId(); // 3 minutes
 
         roundTimers.put(match.getMatchId(), taskId);
     }
@@ -751,14 +722,10 @@ public class MatchmakingListener {
 
         // Check if match is complete (first to 3 wins)
         if (player1Score >= 3 || player2Score >= 3) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                endMatch(match);
-            }, 3 * 20L); // 3 second delay before ending match
+            Bukkit.getScheduler().runTaskLater(plugin, () -> endMatch(match), 3 * 20L); // 3-second delay before ending match
         } else {
             // Start next round
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                startRounds(match);
-            }, 5 * 20L); // 5 second delay between rounds
+            Bukkit.getScheduler().runTaskLater(plugin, () -> startRounds(match), 5 * 20L); // 5-second delay between rounds
         }
     }
 
@@ -790,7 +757,7 @@ public class MatchmakingListener {
             } else {
                 plugin.getLogger().info("Match " + match.getMatchId() + " ended during round delay");
             }
-        }, 5 * 20L); // 5 second delay
+        }, 5 * 20L); // 5-second delay
     }
 
     /**
@@ -810,17 +777,7 @@ public class MatchmakingListener {
             } else {
                 plugin.getLogger().info("Match " + match.getMatchId() + " already ended");
             }
-        }, 3 * 20L); // 3 second delay
-    }
-
-    /**
-     * Awards a round win to a specific player
-     */
-    public void awardRoundWin(String matchId, UUID playerUUID) {
-        ActiveMatch match = activeMatches.get(matchId);
-        if (match != null) {
-            match.addRoundWin(playerUUID);
-        }
+        }, 3 * 20L); // 3-second delay
     }
 
     /**
@@ -949,14 +906,7 @@ public class MatchmakingListener {
 
             // Clean up arena
             plugin.getMapManager().removeArenaInstance(match.getArena().getId());
-        }, 5 * 20L); // 5 second delay
-    }
-
-    /**
-     * Gets an active match by ID
-     */
-    public ActiveMatch getActiveMatch(String matchId) {
-        return activeMatches.get(matchId);
+        }, 5 * 20L); // 5-second delay
     }
 
     /**
@@ -987,6 +937,7 @@ public class MatchmakingListener {
             // Diamond Helmet (Unbreakable)
             ItemStack helmet = new ItemStack(Material.DIAMOND_HELMET);
             ItemMeta helmetMeta = helmet.getItemMeta();
+            assert helmetMeta != null;
             helmetMeta.setUnbreakable(true);
             helmet.setItemMeta(helmetMeta);
             player.getInventory().setHelmet(helmet);
@@ -994,6 +945,7 @@ public class MatchmakingListener {
             // Diamond Chestplate (Unbreakable)
             ItemStack chestplate = new ItemStack(Material.DIAMOND_CHESTPLATE);
             ItemMeta chestplateMeta = chestplate.getItemMeta();
+            assert chestplateMeta != null;
             chestplateMeta.setUnbreakable(true);
             chestplate.setItemMeta(chestplateMeta);
             player.getInventory().setChestplate(chestplate);
@@ -1001,6 +953,7 @@ public class MatchmakingListener {
             // Diamond Leggings (Unbreakable)
             ItemStack leggings = new ItemStack(Material.DIAMOND_LEGGINGS);
             ItemMeta leggingsMeta = leggings.getItemMeta();
+            assert leggingsMeta != null;
             leggingsMeta.setUnbreakable(true);
             leggings.setItemMeta(leggingsMeta);
             player.getInventory().setLeggings(leggings);
@@ -1106,16 +1059,4 @@ public class MatchmakingListener {
         }
     }
 
-    /**
-     * Attempts to reconnect to the matchmaking server
-     */
-    public void reconnect() {
-        if (webSocketClient != null) {
-            try {
-                webSocketClient.reconnect();
-            } catch (Exception e) {
-                plugin.getLogger().severe("Failed to reconnect: " + e.getMessage());
-            }
-        }
-    }
 }

@@ -1,7 +1,8 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.match;
 
+import net.pixelateddream.macebattles.Macebattles;
+import net.pixelateddream.macebattles.misc.MatchmakingListener;
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -20,7 +21,7 @@ public class MatchDeathListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player deadPlayer = event.getEntity();
-        Player killer = deadPlayer.getKiller();
+        deadPlayer.getKiller();
 
         MatchmakingListener listener = plugin.getMatchmakingListener();
         if (listener == null) return;

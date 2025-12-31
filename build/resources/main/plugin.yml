@@ -28,4 +28,4 @@ commands:
     description: Submit a bug report to the server admins
     usage: /<command> <description of the bug>
     aliases: [bug, reportbug]
-buildNumber: 11
+buildNumber: 16

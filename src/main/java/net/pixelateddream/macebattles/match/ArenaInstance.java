@@ -1,4 +1,4 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.match;
 
 import org.bukkit.Location;
 import java.util.HashMap;
@@ -31,7 +31,4 @@ public class ArenaInstance {
         return baseLocation;
     }
 
-    public Map<Integer, Location> getAllSpawnPoints() {
-        return new HashMap<>(spawnPoints);
-    }
 }

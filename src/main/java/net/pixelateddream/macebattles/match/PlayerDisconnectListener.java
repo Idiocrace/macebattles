@@ -1,5 +1,7 @@
-package net.pixelateddream.macebattles;
+package net.pixelateddream.macebattles.match;
 
+import net.pixelateddream.macebattles.Macebattles;
+import net.pixelateddream.macebattles.misc.MatchmakingListener;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
