@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class FriendsManager {
-    private final Map<UUID, Set<UUID>> friends = new ConcurrentHashMap<>();
+    private static final Map<UUID, Set<UUID>> friends = new ConcurrentHashMap<>();
     private final Map<UUID, Set<UUID>> pendingRequests = new ConcurrentHashMap<>();
 
     public FriendsManager() {
@@ -46,7 +46,7 @@ public class FriendsManager {
         if (b != null) b.remove(remover.getUniqueId());
     }
 
-    public List<Player> getFriendsList(Player player) {
+    public static List<Player> getFriendsList(Player player) {
         if (player == null) return Collections.emptyList();
         Set<UUID> raw = friends.get(player.getUniqueId());
         if (raw == null || raw.isEmpty()) return Collections.emptyList();

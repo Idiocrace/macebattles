@@ -46,7 +46,13 @@ public class FriendsCommand implements CommandExecutor, TabCompleter {
                 if (targetPlayer == null) {
                     sender.sendMessage("§cPlayer not found or is offline");
                     return true;
-                }
+                } else if (targetPlayer == sender) {
+                    sender.sendMessage("§cYou cannot add yourself as a friend");
+                    return true;
+                } else if (friendsManager.getFriendsList(player).contains(targetPlayer)) {
+                    sender.sendMessage("§cYou are already friends with this player");
+                    return true;
+            }
                 friendsManager.sendFriendRequest(player, targetPlayer);
                 sender.sendMessage("§eFriend request sent");
                 return true;

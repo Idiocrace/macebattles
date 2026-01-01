@@ -2,10 +2,7 @@ package net.pixelateddream.macebattles;
 
 import net.pixelateddream.macebattles.commands.*;
 import net.pixelateddream.macebattles.entity.*;
-import net.pixelateddream.macebattles.match.KitManager;
-import net.pixelateddream.macebattles.match.MapManager;
-import net.pixelateddream.macebattles.match.MatchDeathListener;
-import net.pixelateddream.macebattles.match.PlayerDisconnectListener;
+import net.pixelateddream.macebattles.match.*;
 import net.pixelateddream.macebattles.misc.EarlyAccessPaywall;
 import net.pixelateddream.macebattles.misc.JoinMessage;
 import net.pixelateddream.macebattles.misc.MatchmakingListener;
@@ -79,6 +76,7 @@ public final class Macebattles extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new EntityLinkingListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinEventHook(), this);
         getServer().getPluginManager().registerEvents(new AsyncPlayerPreLoginEventHook(), this);
+        getServer().getPluginManager().registerEvents(new ShieldCooldownListener(this), this);
 
         // Register commands
         DuelsCommand duelsCommand = new DuelsCommand(this);
