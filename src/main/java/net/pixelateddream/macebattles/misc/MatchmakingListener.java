@@ -963,15 +963,16 @@ public class MatchmakingListener {
             ItemMeta bootsMeta = boots.getItemMeta();
             assert bootsMeta != null;
             bootsMeta.setUnbreakable(true);
-            bootsMeta.addEnchant(Enchantment.FEATHER_FALLING, 4, true);
+            bootsMeta.addEnchant(Enchantment.FEATHER_FALLING, 3, true);
             boots.setItemMeta(bootsMeta);
             player.getInventory().setBoots(boots);
 
-            // Mace (Unbreakable)
+            // Mace (Unbreakable + Wind Burst 1)
             ItemStack mace = new ItemStack(Material.MACE);
             ItemMeta maceMeta = mace.getItemMeta();
             assert maceMeta != null;
             maceMeta.setUnbreakable(true);
+            maceMeta.addEnchant(Enchantment.WIND_BURST, 1, true);
             mace.setItemMeta(maceMeta);
             player.getInventory().addItem(mace);
 

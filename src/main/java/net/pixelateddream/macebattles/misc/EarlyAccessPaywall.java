@@ -16,7 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
-import java.util.Objects;   
+import java.util.Objects;
 
 public class EarlyAccessPaywall {
     private final Path eligibleUuidsPath;

@@ -10,8 +10,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 public class ShieldCooldownListener implements Listener {
+    private final Macebattles plugin;
 
     public ShieldCooldownListener(Macebattles plugin) {
+        this.plugin = plugin;
     }
 
     @EventHandler
@@ -32,6 +34,25 @@ public class ShieldCooldownListener implements Listener {
         // 3 seconds
         int shieldCooldownTicks = 60;
         defender.setCooldown(Material.SHIELD, shieldCooldownTicks);
+        // Force the player to stop using the shield by briefly removing it from the hand,
+        // then restore it next tick so the client stops the right-click action.
+        // Prefer offhand (typical for shields), fallback to main hand.
+        ItemStack offHand = defender.getInventory().getItemInOffHand();
+        if (offHand.getType() == Material.SHIELD) {
+            ItemStack clone = offHand.clone();
+            defender.getInventory().setItemInOffHand(new ItemStack(Material.AIR));
+            defender.updateInventory();
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                ItemStack current = defender.getInventory().getItemInOffHand();
+                if (current.getType() == Material.AIR) {
+                    defender.getInventory().setItemInOffHand(clone);
+                } else {
+                    defender.getInventory().addItem(clone);
+                }
+                defender.updateInventory();
+            }, 1L);
+            return;
+        }
     }
     public boolean isMace(ItemStack item) {
         if (item == null) return false;
