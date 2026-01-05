@@ -967,14 +967,31 @@ public class MatchmakingListener {
             boots.setItemMeta(bootsMeta);
             player.getInventory().setBoots(boots);
 
-            // Mace (Unbreakable + Wind Burst 1)
-            ItemStack mace = new ItemStack(Material.MACE);
-            ItemMeta maceMeta = mace.getItemMeta();
-            assert maceMeta != null;
-            maceMeta.setUnbreakable(true);
-            maceMeta.addEnchant(Enchantment.WIND_BURST, 1, true);
-            mace.setItemMeta(maceMeta);
-            player.getInventory().addItem(mace);
+            // Elytra (Unbreakable)
+            ItemStack elytra = new ItemStack(Material.ELYTRA);
+            ItemMeta elytraMeta = elytra.getItemMeta();
+            assert elytraMeta != null;
+            elytraMeta.setUnbreakable(true);
+            elytra.setItemMeta(elytraMeta);
+            player.getInventory().addItem(elytra);
+
+            // Mace (Unbreakable + Density 5 + Wind Burst 1)
+            ItemStack dMace = new ItemStack(Material.MACE);
+            ItemMeta dMaceMeta = dMace.getItemMeta();
+            assert dMaceMeta != null;
+            dMaceMeta.setUnbreakable(true);
+            dMaceMeta.addEnchant(Enchantment.WIND_BURST, 1, true);
+            dMace.setItemMeta(dMaceMeta);
+            player.getInventory().addItem(dMace);
+
+            // Mace (Unbreakable + Breach 4 + Wind Burst 1)
+            ItemStack bMace = new ItemStack(Material.MACE);
+            ItemMeta bMaceMeta = bMace.getItemMeta();
+            assert bMaceMeta != null;
+            bMaceMeta.setUnbreakable(true);
+            bMaceMeta.addEnchant(Enchantment.WIND_BURST, 1, true);
+            bMace.setItemMeta(bMaceMeta);
+            player.getInventory().addItem(bMace);
 
             // Stone Sword (Unbreakable)
             ItemStack sword = new ItemStack(Material.STONE_SWORD);

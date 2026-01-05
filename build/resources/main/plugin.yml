@@ -36,4 +36,4 @@ commands:
       /<command> list - Show your friends list
       /<command> accept <player> - Accept a friend request
       /<command> deny <player> - Deny a friend request
-buildNumber: 24
+buildNumber: 27
